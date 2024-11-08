@@ -1,0 +1,43 @@
+---
+- name: Installing and configuring nop commerce dotNet application
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+   - name: Installing unzip and nopCommerce
+     ansible.builtin.package:
+       name: "{{ item }}"
+       state: present
+       update_cache: true
+     loop: "{{ package }}"
+   - name: add user
+     ansible.builtin.user:
+      create_home: true
+      name: "{{ user }}"
+      state: present
+      home: "{{ home_dir }}"
+      shell: "{{ shell }}"
+   - name: Create bin and logs directory
+     ansible.builtin.file:
+      path: "{{ item }}"
+      state: directory
+      owner: "{{ user }}"
+     loop: "{{ folders }}"
+   - name: download and unarchive the file 
+     ansible.builtin.unarchive:
+      src: https://github.com/nopSolutions/nopCommerce/releases/download/release-4.70.5/nopCommerce_4.70.5_NoSource_linux_x64.zip
+      dest: "{{ home_dir }}"
+      remote_src: true
+      owner: "{{ user }}"
+   - name: copy the service file to the node machine
+     ansible.builtin.template:
+      src: nopCommerce.service.j2 
+      dest: /etc/systemd/system/nopCommerce.service
+   - name: Start and enable the nopCommerce application service
+     ansible.builtin.service:
+      name: nopCommerce
+      daemon_reload: true
+      state: started
+      enabled: true
+      
+
